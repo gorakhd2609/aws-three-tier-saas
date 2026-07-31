@@ -1,117 +1,248 @@
-# Three-Tier SaaS Architecture on AWS
+# AWS Three-Tier SaaS Architecture
 
-A production-style, three-tier web application architecture on AWS, provisioned entirely with Terraform. Built as a portfolio project to demonstrate cloud architecture, infrastructure-as-code, and AWS networking/security fundamentals.
+![AWS](https://img.shields.io/badge/AWS-Cloud-orange?logo=amazonaws)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-623CE4?logo=terraform)
+![ECS](https://img.shields.io/badge/Amazon-ECS-FF9900)
+![RDS](https://img.shields.io/badge/Amazon-RDS-527FFF)
+![CloudFront](https://img.shields.io/badge/Amazon-CloudFront-8C4FFF)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
+A production-style **Three-Tier SaaS Architecture on AWS** designed following AWS Well-Architected Framework principles. This project demonstrates secure networking, containerized applications, high availability, scalability, caching, CDN integration, and cloud security best practices.
 
+This repository is intended for **learning, portfolio demonstration, and cloud architecture showcase purposes**.
 
-<details>
-<summary>Text version</summary>
+---
 
-```
+# Architecture Diagram
+
+![Architecture Diagram](docs/architecture-diagram.svg)
+
+---
+
+# Architecture Overview
+
+The architecture consists of three logical layers:
+
+### Presentation Layer
+Handles user requests, DNS resolution, content delivery, and edge security.
+
+**Services Used:**
+- Amazon Route 53
+- Amazon CloudFront
+- AWS WAF
+- Amazon S3
+
+---
+
+### Application Layer
+Processes application requests using containerized workloads.
+
+**Services Used:**
+- Application Load Balancer
+- Amazon ECS Fargate
+- Auto Scaling
+
+---
+
+### Data Layer
+Stores application data and improves performance through caching.
+
+**Services Used:**
+- Amazon RDS PostgreSQL (Multi-AZ)
+- Amazon ElastiCache Redis
+
+---
+
+# Architecture (Text Version)
+
+```text
 Users
-  |
-  v
-Route 53 --> CloudFront (CDN) + WAF --> S3 (static assets)
-  |
-  v
-+----------------------------- VPC (10.0.0.0/16) -----------------------------+
-|                                                                              |
-|  Public subnet (2 AZs)                                                      |
-|    Application Load Balancer                                                |
-|              |                                                              |
-|              v                                                              |
-|  Private subnet - app tier (2 AZs)                                          |
-|    ECS Fargate service (auto-scaling, CPU target tracking)                  |
-|              |                                                              |
-|      +-------+-------+                                                     |
-|      v               v                                                     |
-|  Private subnet - data tier (2 AZs)                                        |
-|    RDS PostgreSQL (Multi-AZ)    ElastiCache Redis (session/query cache)    |
-|                                                                              |
-+------------------------------------------------------------------------------+
+   │
+   ▼
+Route 53
+   │
+   ▼
+CloudFront + AWS WAF
+   │
+   ▼
+S3 (Static Assets)
+   │
+   ▼
+Application Load Balancer
+   │
+   ▼
+ECS Fargate
+   │
+   ▼
++-----------------------------------+
+|                                   |
+| PostgreSQL (RDS Multi-AZ)         |
+| Redis (ElastiCache)               |
+|                                   |
++-----------------------------------+
 ```
-</details>
 
-**Edge layer** — Route 53 resolves DNS, CloudFront caches and serves content globally, WAF filters malicious traffic (AWS managed rule set + rate limiting) before it reaches the VPC. Static assets are served from S3 through CloudFront using Origin Access Control (no public bucket access).
+---
 
-**Public subnet** — Only the ALB is internet-facing. It terminates HTTP(S) and forwards to the app tier.
+# Key Features
 
-**Private app subnet** — ECS Fargate runs the containerized application across two AZs, with target-tracking autoscaling on CPU utilization. No public IPs; outbound internet access (for pulling images, calling APIs) goes through NAT gateways.
+- Three-Tier AWS Architecture
+- Multi-AZ High Availability
+- Secure Public and Private Subnets
+- Containerized Applications using ECS Fargate
+- Auto Scaling
+- Load Balancing
+- Database Layer with PostgreSQL
+- Redis Caching Layer
+- CloudFront CDN
+- Route 53 DNS
+- AWS WAF Protection
+- Secrets Management
+- Infrastructure as Code Design using Terraform
 
-**Private data subnet** — RDS PostgreSQL (Multi-AZ, encrypted at rest) and ElastiCache Redis, reachable only from the app tier's security group. Database credentials are generated with `random_password` and stored in Secrets Manager — never hardcoded, never in state as plaintext output.
+---
 
-## Tech stack
+# AWS Services Used
 
-| Layer | Service |
-|---|---|
-| DNS / CDN | Route 53, CloudFront |
-| Security | AWS WAF, Security Groups, Secrets Manager |
+| Category | Service |
+|-----------|----------|
+| Networking | VPC, Subnets, Route Tables |
 | Compute | ECS Fargate |
-| Load balancing | Application Load Balancer |
-| Database | RDS PostgreSQL (Multi-AZ) |
+| Load Balancing | Application Load Balancer |
+| Database | Amazon RDS PostgreSQL |
 | Cache | ElastiCache Redis |
-| Storage | S3 |
-| IaC | Terraform |
+| Storage | Amazon S3 |
+| CDN | CloudFront |
+| DNS | Route 53 |
+| Security | WAF, IAM, Security Groups |
+| Secrets | AWS Secrets Manager |
+| Monitoring | CloudWatch |
+| Infrastructure | Terraform |
 
-## Prerequisites
+---
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5
-- An AWS account and credentials configured (`aws configure` or environment variables)
-- A container image pushed somewhere ECS can pull from (ECR, Docker Hub, etc.)
+# Architecture Highlights
 
-## Setup
+- High Availability across multiple Availability Zones
+- Stateless Application Design
+- Private Database Tier
+- Containerized Application Deployment
+- Secure Networking
+- Auto Scaling
+- CDN Integration
+- Edge Security with AWS WAF
+- Secrets Management
+- Cloud-Native Design
 
-```bash
-git clone <your-repo-url>
-cd aws-three-tier-saas
+---
 
-cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars: set container_image to your app's image, adjust sizing
+# Security Best Practices
 
-terraform init
-terraform plan
-terraform apply
+The architecture follows AWS security best practices:
+
+- Public access only through the Application Load Balancer
+- Application servers in private subnets
+- Database in private subnets
+- Security Groups between each tier
+- Least Privilege IAM Roles
+- Database encryption enabled
+- Secrets stored in AWS Secrets Manager
+- Private S3 bucket
+- AWS WAF managed rules
+- Rate limiting for malicious traffic
+
+---
+
+# High Availability
+
+The architecture is designed for fault tolerance:
+
+- Multi-AZ Deployment
+- ECS Service Auto Scaling
+- Load Balancer Health Checks
+- RDS Multi-AZ Database
+- CloudFront Global Edge Locations
+
+---
+
+# Scalability
+
+The infrastructure supports horizontal scaling:
+
+- ECS Auto Scaling
+- CloudFront Edge Caching
+- Redis Caching
+- Stateless Containers
+- Load Balanced Application Tier
+
+---
+
+# Repository Structure
+
+```text
+.
+├── docs/
+│   └── architecture-diagram.svg
+├── README.md
+└── diagrams/
 ```
 
-On success, Terraform prints the ALB DNS name and CloudFront domain. Point Route 53 (or your DNS provider) at the CloudFront domain for production traffic.
+---
 
-To tear everything down:
+# Skills Demonstrated
 
-```bash
-terraform destroy
-```
+- AWS Cloud Architecture
+- Terraform Concepts
+- Infrastructure as Code
+- Amazon ECS
+- Amazon RDS
+- ElastiCache
+- CloudFront
+- Route 53
+- AWS WAF
+- IAM
+- Secrets Manager
+- Auto Scaling
+- Load Balancing
+- Networking
+- High Availability
+- Cloud Security
 
-## Notes and next steps
+---
 
-- **HTTPS**: the ALB and CloudFront default to HTTP/the default CloudFront cert. For a real domain, request an ACM certificate (in `us-east-1` for CloudFront) and wire it into `alb.tf` / `s3_cloudfront.tf`.
-- **WAF region**: `aws_wafv2_web_acl` with `scope = "CLOUDFRONT"` must be created in `us-east-1`. If your primary region is different, add a provider alias for this resource.
-- **CI/CD**: not included here by design — see the "CI/CD" section of the project writeup / issues for a suggested GitHub Actions pipeline (build → push to ECR → `ecs update-service`).
-- **Cost**: with `db.t4g.micro`, `cache.t4g.micro`, 2 NAT gateways, and 2 Fargate tasks, expect roughly $120–180/month depending on region and traffic — the two NAT gateways are the biggest line item. For a pure demo, you can drop to a single NAT gateway or a NAT instance.
-- **State**: this repo uses local state by default. Uncomment the `backend "s3"` block in `providers.tf` for remote state if collaborating or running from CI.
+# Future Improvements
 
-## Proof of deployment
+- CI/CD using GitHub Actions
+- HTTPS using ACM Certificates
+- Blue-Green Deployments
+- CloudWatch Alarms
+- SNS Notifications
+- Monitoring Dashboard
+- Remote Terraform State
+- Automated Backup Strategy
 
-This stack creates real, billable AWS resources, so it isn't left running permanently. Evidence from the most recent deploy:
+---
 
-- [ ] Screenshot: ECS service running with healthy tasks
-- [ ] Screenshot: RDS instance status (Multi-AZ, `available`)
-- [ ] Screenshot: CloudFront distribution deployed
-- [ ] Screen recording: `terraform apply` → hitting the ALB/CloudFront endpoint in a browser
+# Project Status
 
-<!--
-Once you've deployed and captured evidence, replace the checklist above with:
+**Status:** Completed
 
-![ECS service running](docs/screenshots/ecs-service.png)
-![RDS Multi-AZ](docs/screenshots/rds-status.png)
-![CloudFront distribution](docs/screenshots/cloudfront.png)
+This project demonstrates a production-style AWS architecture intended for learning, portfolio showcase, and cloud design best practices.
 
-Or link a short demo video/GIF here.
--->
+---
 
-## Architecture decisions
+# Author
 
-See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the reasoning behind the key choices — ECS Fargate vs. EC2/Lambda, Multi-AZ RDS, three-tier subnet separation, Secrets Manager, and what was deliberately left out of scope.
+**Gorakh Dorle**
 
-## License
+Cloud Engineer | AWS | Terraform | DevOps
 
-MIT — use this as a starting point for your own projects.
+GitHub: https://github.com/gorakhd2609
+
+LinkedIn: (https://www.linkedin.com/in/gorakh-dorle-2609v?)
+
+---
+
+# License
+
+This project is licensed under the MIT License.
