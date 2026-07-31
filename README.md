@@ -2,9 +2,7 @@
 
 A production-style, three-tier web application architecture on AWS, provisioned entirely with Terraform. Built as a portfolio project to demonstrate cloud architecture, infrastructure-as-code, and AWS networking/security fundamentals.
 
-## Architecture
 
-![Architecture diagram](docs/architecture-diagram.svg)
 
 <details>
 <summary>Text version</summary>
